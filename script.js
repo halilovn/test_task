@@ -1,48 +1,75 @@
-const taskInput = document.querySelector(".task-input input"),
-filters = document.querySelectorAll(".filters span"),
-clearAll = document.querySelector(".clear-btn"),
-taskBox = document.querySelector(".task-box");
+const container = document.querySelector('.container');
+var inputValue = document.querySelector('.input');
+const add = document.querySelector('.add');
 
-let editId,
-isEditTask = false,
-todos = JSON.parse(localStorage.getItem("todo-list"));
 
-filters.forEach(btn => {
-    btn.addEventListener("click", () => {
-        document.querySelector("span.active").classList.remove("active");
-        btn.classList.add("active");
-        showTodo(btn.id);
-    });
-});
-
-function showTodo(filter) {
-    let liTag = "";
-    if(todos) {
-        todos.forEach((todo, id) => {
-            let completed = todo.status == "completed" ? "checked" : "";
-            if(filter == todo.status || filter == "all") {
-                liTag += `<li class="task">
-                            <label for="${id}">
-                                <input onclick="updateStatus(this)" type="checkbox" id="${id}" ${completed}>
-                                <p class="${completed}">${todo.name}</p>
-                            </label>
-                            <div class="settings">
-                                <i onclick="showMenu(this)" class="uil uil-ellipsis-h"></i>
-                                <ul class="task-menu">
-                                    <li onclick='editTask(${id}, "${todo.name}")'><i></i>Изменить</li>
-                                    <li onclick='deleteTask(${id}, "${filter}")'><i></i>Удалить</li>
-                                </ul>
-                            </div>
-                        </li>`;
-            }
-        });
-    }
-    taskBox.innerHTML = liTag || `<span>У вас здесь нет задач</span>`;
-    let checkTask = taskBox.querySelectorAll(".task");
-    !checkTask.length ? clearAll.classList.remove("active") : clearAll.classList.add("active");
-    taskBox.offsetHeight >= 300 ? taskBox.classList.add("overflow") : taskBox.classList.remove("overflow");
+if(window.localStorage.getItem("todos") == undefined){
+     var todos = [];
+     window.localStorage.setItem("todos", JSON.stringify(todos));
 }
-showTodo("all");
+
+var todosEX = window.localStorage.getItem("todos");
+var todos = JSON.parse(todosEX);
+
+
+class item{
+	constructor(name){
+		this.createItem(name);
+	}
+    createItem(name){
+    	var itemBox = document.createElement('div');
+        itemBox.classList.add('item');
+
+    	var input = document.createElement('input');
+        input.type = "text";
+    	input.disabled = true;
+    	input.value = name;
+    	input.classList.add('item_input');
+
+    	var edit = document.createElement('button');
+    	edit.classList.add('edit');
+    	edit.innerHTML = `<i class="uil uil-pen"></i>`;
+    	edit.addEventListener('click', () => this.edit(input, name));
+
+    	var remove = document.createElement('button');
+    	remove.classList.add('remove');
+    	remove.innerHTML = `<i class="uil uil-trash">`;
+    	remove.addEventListener('click', () => this.remove(itemBox, name));
+
+    	container.appendChild(itemBox);
+
+        itemBox.appendChild(input);
+        itemBox.appendChild(edit);
+        itemBox.appendChild(remove);
+
+    }
+
+    edit(input, name){
+        if(input.disabled == true){
+           input.disabled = !input.disabled;
+        }
+    	else{
+            input.disabled = !input.disabled;
+            let indexof = todos.indexOf(name);
+            todos[indexof] = input.value;
+            window.localStorage.setItem("todos", JSON.stringify(todos));
+        }
+    }
+
+    remove(itemBox, name){
+        itemBox.parentNode.removeChild(itemBox);
+        let index = todos.indexOf(name);
+        todos.splice(index, 1);
+        window.localStorage.setItem("todos", JSON.stringify(todos));
+    }
+}
+
+add.addEventListener('click', check);
+window.addEventListener('keydown', (e) => {
+	if(e.which == 13){
+		check();
+	}
+})
 
 function showMenu(selectedTask) {
     let menuDiv = selectedTask.parentElement.lastElementChild;
@@ -63,44 +90,23 @@ function updateStatus(selectedTask) {
         taskName.classList.remove("checked");
         todos[selectedTask.id].status = "pending";
     }
-    localStorage.setItem("todo-list", JSON.stringify(todos))
+    localStorage.setItem("todos", JSON.stringify(todos))
 }
 
-function editTask(taskId, textName) {
-    editId = taskId;
-    isEditTask = true;
-    taskInput.value = textName;
-    taskInput.focus();
-    taskInput.classList.add("active");
+function check(){
+	if(inputValue.value != ""){
+		new item(inputValue.value);
+        todos.push(inputValue.value);
+        window.localStorage.setItem("todos", JSON.stringify(todos));
+		inputValue.value = "";
+	}
 }
 
-function deleteTask(deleteId, filter) {
-    isEditTask = false;
-    todos.splice(deleteId, 1);
-    localStorage.setItem("todo-list", JSON.stringify(todos));
-    showTodo(filter);
+
+for (var v = 0 ; v < todos.length ; v++){
+    new item(todos[v]);
 }
 
-clearAll.addEventListener("click", () => {
-    isEditTask = false;
-    todos.splice(0, todos.length);
-    localStorage.setItem("todo-list", JSON.stringify(todos));
-    showTodo()
-});
 
-taskInput.addEventListener("keyup", e => {
-    let userTask = taskInput.value.trim();
-    if(e.key == "Enter" && userTask) {
-        if(!isEditTask) {
-            todos = !todos ? [] : todos;
-            let taskInfo = {name: userTask, status: "pending"};
-            todos.push(taskInfo);
-        } else {
-            isEditTask = false;
-            todos[editId].name = userTask;
-        }
-        taskInput.value = "";
-        localStorage.setItem("todo-list", JSON.stringify(todos));
-        showTodo(document.querySelector("span.active").id);
-    }
-});
+new item("Hello world");
+
